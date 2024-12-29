@@ -1,4 +1,5 @@
 # sensor.py
+from datetime import datetime, time
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
@@ -29,7 +30,10 @@ class TurmericSensor(CoordinatorEntity, Entity):
                 items = [item["name"] for item in self.coordinator.data["groceries"]["result"]]
                 return ", ".join(items) if len(items) <= 5 else f"{len(items)} items available"
             elif self.type == "meals":
-                meals = sorted(self.coordinator.data["meals"]["result"], key=lambda x: x["date"])[:7]
+                today = datetime.combine(datetime.today(), time.min) # Today at midnight
+                meals = [meal 
+                        for meal in self.coordinator.data["meals"]["result"]
+                        if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S") >= today][:7]
                 return f"{len(meals)} upcoming meals" if meals else "No upcoming meals"
         except (KeyError, TypeError):
             return "Data unavailable"
@@ -45,11 +49,13 @@ class TurmericSensor(CoordinatorEntity, Entity):
                     aisles.setdefault(aisle, []).append(item["name"])
                 return {"aisles": aisles}
             elif self.type == "meals":
+                today = datetime.combine(datetime.today(), time.min) # Today at midnight
                 return {
                     "meals": [
                         {"name": meal["name"], "date": meal["date"]}
-                        for meal in sorted(self.coordinator.data["meals"]["result"], key=lambda x: x["date"])[:7]
-                    ]
+                        for meal in sorted(self.coordinator.data["meals"]["result"], key=lambda x: x["date"])
+                        if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S") >= today
+                    ][:7]
                 }
         except (KeyError, TypeError):
             return {"error": "Data unavailable"}
