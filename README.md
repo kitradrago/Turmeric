@@ -29,13 +29,8 @@ Turmeric is a custom Home Assistant integration that talks to the Paprika Ap
 
 ## 📦 Installation
 
-### Option 1 – HACS (recommended)
+### Option 1 – HACS (hopefully coming soon)
 
-1. Open **HACS → Integrations**.  
-2. Click **Explore & download repositories**.  
-3. Search for **“Turmeric”** and click **Download**.  
-4. Restart Home Assistant.  
-5. Go to **Settings → Devices & Services → Integrations → Add Integration** → search for **Turmeric** and follow the wizard.
 
 ### Option 2 – Manual
 
