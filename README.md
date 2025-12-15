@@ -1,87 +1,81 @@
 
-# Turmeric: Home Assistant Integration for PaprikaAPP
+# Turmeric – Home Assistant integration for Paprika App
 
-Turmeric is a custom Home Assistant integration designed to connect with the Paprika App API. It provides sensors for grocery lists and meal plans, making them easily accessible on your Home Assistant dashboard.
+Turmeric is a custom Home Assistant integration that talks to the Paprika App API and exposes two sensors:
+
+* **`sensor.turmeric_groceries`** – the current grocery list, grouped by aisle.  
+* **`sensor.turmeric_meals`** – the next seven planned meals.
+
+> **v1.1.0 – 2025‑12‑15**  
+> * Automatic periodic refresh (user‑defined intervals)  
+> * Options page to change refresh intervals at any time  
+> * Manual service `turmeric.refresh_all` for on‑demand sync  
+> * Better error handling (timeouts, rate‑limit warnings)  
 
 ---
 
-## Features
-- **Groceries Sensor**: Displays a list of grocery items grouped by aisle.
-- **Meals Sensor**: Lists the next seven planned meals in chronological order.
-- Configurable refresh rates for groceries and meals data.
+## ✨ New Features (v1.1.0)
+
+| Feature | What it does |
+|---------|--------------|
+| **Automatic syncing** | The integration now refreshes groceries and meals automatically based on the intervals you set (default 6 h for groceries, 12 h for meals). |
+| **Adjustable refresh intervals** | Via **Settings → Devices & Services → Turmeric → Options** you can change the refresh rate for each sensor (1‑1440 minutes). Changes are applied instantly. |
+| **Manual refresh service** | Call `turmeric.refresh_all` from Developer Tools → Services or from any automation to force an immediate pull from Paprika. |
+| **Improved logging** | Debug logs now include the raw payloads; warnings appear only on rate‑limit (`429`) responses or unexpected errors. |
+| **Timeout & rate‑limit handling** | Each API request times out after 10 seconds. If Paprika returns a `429` you’ll see a warning with the suggested retry delay. |
+| **Cleaner code** | Centralised constants, type hints, and documentation comments. |
 
 ---
 
-## Installation
+## 📦 Installation
 
-### Option 1: Install via HACS (Pending HACS Validation and Inclusion)
-~~1. Open Home Assistant and go to **HACS** → **Integrations**.
-2. Click the **+ Explore & Download Repositories** button.
-3. Search for "Turmeric" and click **Download**.
-4. Restart Home Assistant.
-5. Go to **Settings** → **Devices & Services** → **Integrations**.
-6. Click **Add Integration**, search for "Turmeric," and follow the setup instructions.~~
+### Option 1 – HACS (recommended)
 
-### Option 2: Manual Installation
-1. Clone or download the repository into your Home Assistant `custom_components` folder.
+1. Open **HACS → Integrations**.  
+2. Click **Explore & download repositories**.  
+3. Search for **“Turmeric”** and click **Download**.  
+4. Restart Home Assistant.  
+5. Go to **Settings → Devices & Services → Integrations → Add Integration** → search for **Turmeric** and follow the wizard.
+
+### Option 2 – Manual
 
 ```bash
-cd /config/custom_components
-mkdir turmeric
+# From the Home Assistant config folder (/config)
+cd custom_components
+mkdir -p turmeric
 cd turmeric
-# Copy the integration files here
-```
+# Copy all integration files (manifest.json, *.py, strings.json, etc.) into this folder
+Restart Home Assistant afterwards.
 
-2. Restart Home Assistant.
+🔧 Setup
+1️⃣ Get a Paprika App API token
+# First try the v1 endpoint, fall back to v2 if needed
+curl -X POST https://paprikaapp.com/api/v1/account/login \
+     -d "email=YOUR_EMAIL&password=YOUR_PASSWORD"
 
----
+# If that fails, try v2
+curl -X POST https://paprikaapp.com/api/v2/account/login \
+     -d "email=YOUR_EMAIL&password=YOUR_PASSWORD"
+The JSON response contains a field called token. Copy that value – you’ll need it in the next step.
 
-## Setup Instructions
-
-### 1. Obtain Your Paprika App API Token
-To use this integration, you need your Paprika App API token. Follow these steps:
-
-1. Open a terminal or command prompt.
-2. Run the following `curl` command, replacing `MY_EMAIL` with your Paprika account email and `MY_PAPRIKA_PASSWORD` with your password:
-
-      ```bash
-   curl -X POST https://paprikaapp.com/api/v1/account/login -d 'email=MY_EMAIL&password=MY_PAPRIKA_PASSWORD'
-   ```
-    if v1 doesnt work, try using v2.
-   
-   ```bash
-   curl -X POST https://paprikaapp.com/api/v2/account/login -d 'email=MY_EMAIL&password=MY_PAPRIKA_PASSWORD'
-   ```
-
-4. The response will contain a field called `token`. Copy this token; you'll need it during setup.
-
-### 2. Add the Integration
-1. Go to **Settings** → **Devices & Services** → **Integrations**.
-2. Click the **Add Integration** button.
-3. Search for "Turmeric" and select it.
-4. Enter your Paprika API token.
-5. Configure the refresh intervals (in minutes) for groceries and meals (default: 360 and 720 respectively).
-6. Save the configuration.
-
-### 3. Verify Sensors
-1. Navigate to **Developer Tools** → **States**.
-2. Look for `sensor.turmeric_groceries` and `sensor.turmeric_meals`.
-3. Verify that the data is populated correctly.
-
----
-
-## Dashboard Cards
-
-### Grocery List Card
-Displays the grocery list grouped by aisle.
-
-#### YAML Configuration
-```yaml
+2️⃣ Add the integration
+Settings → Devices & Services → Integrations → Add Integration.
+Search for Turmeric and select it.
+Paste the API token.
+Set the Groceries Refresh and Meals Refresh intervals (minutes).
+Defaults: 360 min (6 h) for groceries, 720 min (12 h) for meals.
+Finish the wizard.
+3️⃣ Verify the sensors
+Open Developer Tools → States.
+Look for sensor.turmeric_groceries and sensor.turmeric_meals.
+Their state should contain data (or “Data unavailable” if something went wrong).
+📊 Dashboard cards (example)
+Grocery List (Markdown card)
 type: markdown
 title: Grocery List
 content: |
   {% if state_attr('sensor.turmeric_groceries', 'aisles') %}
-  **Grocery List:**
+  **Grocery List**
   {% for aisle, items in state_attr('sensor.turmeric_groceries', 'aisles').items() %}
   **{{ aisle }}**
   {% for item in items %}
@@ -91,90 +85,53 @@ content: |
   {% else %}
   No grocery items available.
   {% endif %}
-```
-
-### Upcoming Meals Card
-Displays a numbered list of the next seven planned meals.
-
-#### YAML Configuration
-```yaml
+Upcoming Meals (Markdown card)
 type: markdown
 title: Upcoming Meals
 content: |
   {% if state_attr('sensor.turmeric_meals', 'meals') %}
   {% for meal in state_attr('sensor.turmeric_meals', 'meals') %}
-  {{ loop.index }}. {{ meal.name }} - {{ meal.date }}
+  {{ loop.index }}. {{ meal.name }} – {{ meal.date }}
   {% endfor %}
   {% else %}
   No upcoming meals planned.
   {% endif %}
-```
+⚙️ Advanced usage
+Manual refresh service
+service: turmeric.refresh_all
+You can call this from an automation, a button card, or the Services UI to force an immediate sync.
 
----
+Debug logging
+Add the following to your configuration.yaml to see detailed request/response logs:
 
-## Configuration Options
-
-During setup, you can configure the following options:
-- **API Token**: Your Paprika App API token.
-- **Groceries Refresh Rate**: Frequency (in minutes) to refresh grocery data (default: 360).
-- **Meals Refresh Rate**: Frequency (in minutes) to refresh meal data (default: 720).
-
----
-
-## Troubleshooting
-
-### Common Issues
-1. **Integration Not Visible**:
-   - Ensure files are in `/config/custom_components/turmeric/`.
-   - Restart Home Assistant and clear the browser cache.
-
-2. **Sensors Returning `Unknown`**:
-   - Verify the API token is correct.
-   - Check logs under **Settings** → **System** → **Logs** for errors.
-
-3. **Markdown Card Formatting Issues**:
-   - Verify the card YAML is correctly indented.
-   - Ensure the sensors are populated with data.
-
-### Debugging Logs
-Enable debug logging for the integration by adding the following to `configuration.yaml`:
-
-```yaml
 logger:
   default: warning
   logs:
     custom_components.turmeric: debug
-```
+Check the logs under Settings → System → Logs.
 
-Check the logs under **Settings** → **System** → **Logs**.
+🛠️ Troubleshooting
+Symptom	Likely cause	Fix
+Integration not listed	Files not placed in /config/custom_components/turmeric/ or HA not restarted.	Verify folder location, restart HA, clear browser cache.
+Sensors show unknown or Data unavailable	Invalid API token or network error.	Re‑run the token request, ensure the token is correct, enable debug logging to view the HTTP status.
+No periodic updates	Running an older version (pre‑v1.1.0) or update_interval overridden.	Update to the latest code, confirm the service turmeric.refresh_all exists, and that the options page shows the intervals you set.
+Rate‑limit warnings (429)	Paprika limits the number of calls.	Increase the refresh intervals, or let the integration wait for the suggested retry‑after period (shown in the warning).
+🚀 Future roadmap (ideas)
+Real‑time push updates from Paprika (if the API ever supports it).
+Optional login flow that automatically retrieves the token.
+Ability to toggle how many meals are displayed or filter by date.
+Additional Paprika endpoints (e.g., recipe lookup, ingredient scaling).
+🤝 Contributing
+Pull requests, issues, and ideas are welcome! Please open them on the GitHub repo:
 
----
+🔗 https://github.com/kitradrago/turmeric
 
-## Future Enhancements
-- Real-time push updates from Paprika App? (May not be possible)
-- Optional step to use Paprika Login info to automatically pull users token.
-- Options to toggle upcoming meals display by count or by date.
-- Support for more Paprika API endpoints.
-- Enhanced error handling and validation.
+When contributing, make sure to:
 
----
+Follow the existing code style (PEP 8, type hints).
+Add or update unit tests if you introduce new logic.
+Update this README if you add user‑visible features.
+📜 License
+This project is released under the MIT License – see the LICENSE file for the full text.
 
-## Contributions
-Contributions are welcome! Feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/kitradrago/turmeric).
-
-## Attributions
-
-Thanks to the following inspirations: 
-
-Darius K ( https://community.home-assistant.io/u/dariusk/ ) - RESTful sensor pull that I first found. My frustration at trying to find a nice way to format the output in this pushed me over to figuring out how to do it in an integration way to make things easier.
-
-@mattdsteele ( https://gist.github.com/mattdsteele/7386ec363badfdeaad05a418b9a1f30a ) which helped me figure out the groceries API link and some other things.
-
----
-
-## License
-This project is licensed under the Apache 2.0 License. See the LICENSE file for details.
-
-Under this license:
-- You are free to use, modify, and distribute the software.
-- Attribution is required in any derivative works, ensuring that credit is given to the original authors.
+Happy cooking and automating!
