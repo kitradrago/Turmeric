@@ -16,10 +16,27 @@ class TurmericOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        options_schema = vol.Schema({
-            vol.Required(CONF_API_TOKEN, default=self.config_entry.options.get(CONF_API_TOKEN, "")): selector.TextSelector(selector.TextSelectorConfig(type="password")),
-            vol.Optional("groceries_refresh", default=self.config_entry.options.get("groceries_refresh", 360)): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
-            vol.Optional("meals_refresh", default=self.config_entry.options.get("meals_refresh", 720)): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
-        })
+        options_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_API_TOKEN,
+                    default=self.config_entry.options.get(CONF_API_TOKEN, ""),
+                ): selector.TextSelector(
+                    selector.TextSelectorConfig(type="password")
+                ),
+                vol.Optional(
+                    "groceries_refresh",
+                    default=self.config_entry.options.get(
+                        "groceries_refresh", 360
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
+                vol.Optional(
+                    "meals_refresh",
+                    default=self.config_entry.options.get("meals_refresh", 720),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
+            }
+        )
 
-        return self.async_show_form(step_id="init", data_schema=options_schema)
+        return self.async_show_form(
+            step_id="init", data_schema=options_schema
+        )

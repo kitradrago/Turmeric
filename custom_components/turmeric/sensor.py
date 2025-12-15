@@ -27,13 +27,25 @@ class TurmericSensor(CoordinatorEntity, Entity):
         """Return the state of the sensor."""
         try:
             if self.type == "groceries":
-                items = [item["name"] for item in self.coordinator.data["groceries"]["result"]]
-                return ", ".join(items) if len(items) <= 5 else f"{len(items)} items available"
+                items = [
+                    item["name"]
+                    for item in self.coordinator.data["groceries"]["result"]
+                ]
+                return (
+                    ", ".join(items)
+                    if len(items) <= 5
+                    else f"{len(items)} items available"
+                )
             elif self.type == "meals":
-                today = datetime.combine(datetime.today(), time.min) # Today at midnight
-                meals = [meal 
-                        for meal in self.coordinator.data["meals"]["result"]
-                        if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S") >= today][:7]
+                today = datetime.combine(datetime.today(), time.min)
+                meals = [
+                    meal
+                    for meal in self.coordinator.data["meals"]["result"]
+                    if datetime.strptime(
+                        meal["date"], "%Y-%m-%d %H:%M:%S"
+                    )
+                    >= today
+                ][:7]
                 return f"{len(meals)} upcoming meals" if meals else "No upcoming meals"
         except (KeyError, TypeError):
             return "Data unavailable"
@@ -49,12 +61,18 @@ class TurmericSensor(CoordinatorEntity, Entity):
                     aisles.setdefault(aisle, []).append(item["name"])
                 return {"aisles": aisles}
             elif self.type == "meals":
-                today = datetime.combine(datetime.today(), time.min) # Today at midnight
+                today = datetime.combine(datetime.today(), time.min)
                 return {
                     "meals": [
                         {"name": meal["name"], "date": meal["date"]}
-                        for meal in sorted(self.coordinator.data["meals"]["result"], key=lambda x: x["date"])
-                        if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S") >= today
+                        for meal in sorted(
+                            self.coordinator.data["meals"]["result"],
+                            key=lambda x: x["date"],
+                        )
+                        if datetime.strptime(
+                            meal["date"], "%Y-%m-%d %H:%M:%S"
+                        )
+                        >= today
                     ][:7]
                 }
         except (KeyError, TypeError):

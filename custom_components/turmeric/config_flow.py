@@ -30,19 +30,32 @@ class TurmericConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             elif not (1 <= meals_refresh <= 1440):
                 errors["meals_refresh"] = "invalid_refresh_time"
             else:
-                return self.async_create_entry(title="Turmeric", data={
-                    CONF_API_TOKEN: api_token,
-                    "groceries_refresh": groceries_refresh,
-                    "meals_refresh": meals_refresh
-                })
+                return self.async_create_entry(
+                    title="Turmeric",
+                    data={
+                        CONF_API_TOKEN: api_token,
+                        "groceries_refresh": groceries_refresh,
+                        "meals_refresh": meals_refresh,
+                    },
+                )
 
-        data_schema = vol.Schema({
-            vol.Required(CONF_API_TOKEN): selector.TextSelector(selector.TextSelectorConfig(type="password")),
-            vol.Optional("groceries_refresh", default=360): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
-            vol.Optional("meals_refresh", default=720): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
-        })
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_API_TOKEN): selector.TextSelector(
+                    selector.TextSelectorConfig(type="password")
+                ),
+                vol.Optional(
+                    "groceries_refresh", default=360
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
+                vol.Optional(
+                    "meals_refresh", default=720
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
+            }
+        )
 
-        return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
+        return self.async_show_form(
+            step_id="user", data_schema=data_schema, errors=errors
+        )
 
     async def async_validate_api_token(self, api_token: str) -> bool:
         """Validate the API token against the Turmeric API."""
@@ -53,8 +66,10 @@ class TurmericConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     _LOGGER.debug("Validation response status: %s", resp.status)
                     if resp.status == 200:
                         return True
-                    _LOGGER.debug("Validation response text: %s", await resp.text())
+                    _LOGGER.debug(
+                        "Validation response text: %s", await resp.text()
+                    )
                     return False
-        except Exception as err:
+        except Exception as err:  # pragma: no cover
             _LOGGER.error("Error validating API token: %s", err)
             return False
