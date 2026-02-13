@@ -9,11 +9,13 @@ Turmeric is a custom Home Assistant integration that connects to the [Paprika Re
 
 ### HACS (recommended)
 
-1. Open Home Assistant and go to **HACS → Integrations**.
-2. Click the three-dot menu in the top right and select **Custom repositories**.
-3. Paste the repository URL and select **Integration** as the category.
-4. Search for **Turmeric** and click **Download**.
-5. Restart Home Assistant.
+1. Click the button below to open the repository in HACS:
+
+   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kitradrago&repository=Turmeric)
+
+2. Click **Download** and restart Home Assistant.
+
+Alternatively, open HACS manually: **HACS → Integrations → three-dot menu → Custom repositories**, paste the repository URL, select **Integration**, then download.
 
 ### Manual
 
