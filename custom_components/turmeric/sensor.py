@@ -72,9 +72,21 @@ class TurmericSensor(CoordinatorEntity, Entity):
                 today = datetime.now(timezone.utc).replace(
                     hour=0, minute=0, second=0, microsecond=0
                 )
+                type_names = {
+                    0: "Breakfast",
+                    1: "Lunch",
+                    2: "Dinner",
+                    3: "Snack",
+                }
                 return {
                     "meals": [
-                        {"name": meal["name"], "date": meal["date"]}
+                        {
+                            "name": meal["name"],
+                            "date": meal["date"],
+                            "type": type_names.get(
+                                meal.get("type", 2), "Meal"
+                            ),
+                        }
                         for meal in sorted(
                             self.coordinator.data["meals"]["result"],
                             key=lambda x: x["date"],

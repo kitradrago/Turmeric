@@ -68,9 +68,24 @@ content: |
 type: markdown
 title: Upcoming Meals
 content: |
-  {% if state_attr('sensor.turmeric_meals', 'meals') %}
-  {% for meal in state_attr('sensor.turmeric_meals', 'meals') %}
-  {{ loop.index }}. {{ meal.name }} – {{ meal.date }}
+  {% set meals = state_attr('sensor.turmeric_meals', 'meals') %}
+  {% if meals %}
+  {% set ns = namespace(current_date='', current_type='') %}
+  {% for meal in meals %}
+  {% set meal_date = strptime(meal.date, '%Y-%m-%d %H:%M:%S') %}
+  {% set formatted = meal_date.strftime('%A, %B %-d, %Y') %}
+  {% if formatted != ns.current_date %}
+  {% set ns.current_date = formatted %}
+  {% set ns.current_type = '' %}
+
+  **{{ formatted }}**
+  {% endif %}
+  {% if meal.type != ns.current_type %}
+  {% set ns.current_type = meal.type %}
+
+  *{{ meal.type }}*
+  {% endif %}
+  - {{ meal.name }}
   {% endfor %}
   {% else %}
   No upcoming meals planned.
