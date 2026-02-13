@@ -4,28 +4,33 @@
     "step": {
       "user": {
         "title": "Set up Turmeric",
-        "description": "Connect to your Turmeric account to fetch grocery lists and meals.",
+        "description": "Sign in with your Paprika account to fetch grocery lists and meals.",
         "data": {
-          "api_token": "API Token",
+          "email": "Email",
+          "password": "Password",
           "groceries_refresh": "Groceries Refresh Interval (minutes)",
           "meals_refresh": "Meals Refresh Interval (minutes)"
-        },
-        "errors": {
-          "invalid_api_token": "The provided API token is invalid. Please try again.",
-          "invalid_refresh_time": "Refresh time must be between 1 and 1440 minutes."
         }
       }
     },
-    "options": {
-      "step": {
-        "init": {
-          "title": "Turmeric Options",
-          "description": "Modify your Turmeric settings below.",
-          "data": {
-            "api_token": "API Token",
-            "groceries_refresh": "Groceries Refresh Interval (minutes)",
-            "meals_refresh": "Meals Refresh Interval (minutes)"
-          }
+    "error": {
+      "invalid_auth": "Invalid email or password. Please try again.",
+      "cannot_connect": "Unable to connect to the Paprika API. Please try again later.",
+      "invalid_refresh_time": "Refresh time must be between 1 and 1440 minutes.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This Paprika account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Turmeric Options",
+        "description": "Modify your Turmeric settings below.",
+        "data": {
+          "groceries_refresh": "Groceries Refresh Interval (minutes)",
+          "meals_refresh": "Meals Refresh Interval (minutes)"
         }
       }
     }

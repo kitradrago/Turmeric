@@ -1,13 +1,15 @@
-# options_flow.py
-from homeassistant import config_entries
+"""Options flow for Turmeric integration."""
 import voluptuous as vol
-from homeassistant.helpers import selector
-from .const import DOMAIN, CONF_API_TOKEN
+
+from homeassistant import config_entries
+
+from .const import DEFAULT_GROCERIES_REFRESH, DEFAULT_MEALS_REFRESH
+
 
 class TurmericOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Turmeric options."""
 
-    def __init__(self, config_entry):
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize the options flow handler."""
         self.config_entry = config_entry
 
@@ -18,25 +20,25 @@ class TurmericOptionsFlowHandler(config_entries.OptionsFlow):
 
         options_schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_API_TOKEN,
-                    default=self.config_entry.options.get(CONF_API_TOKEN, ""),
-                ): selector.TextSelector(
-                    selector.TextSelectorConfig(type="password")
-                ),
                 vol.Optional(
                     "groceries_refresh",
                     default=self.config_entry.options.get(
-                        "groceries_refresh", 360
+                        "groceries_refresh",
+                        self.config_entry.data.get(
+                            "groceries_refresh", DEFAULT_GROCERIES_REFRESH
+                        ),
                     ),
                 ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
                 vol.Optional(
                     "meals_refresh",
-                    default=self.config_entry.options.get("meals_refresh", 720),
+                    default=self.config_entry.options.get(
+                        "meals_refresh",
+                        self.config_entry.data.get(
+                            "meals_refresh", DEFAULT_MEALS_REFRESH
+                        ),
+                    ),
                 ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
             }
         )
 
-        return self.async_show_form(
-            step_id="init", data_schema=options_schema
-        )
+        return self.async_show_form(step_id="init", data_schema=options_schema)

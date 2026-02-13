@@ -1,8 +1,11 @@
-# sensor.py
-from datetime import datetime, time
+"""Sensor platform for Turmeric integration."""
+from datetime import datetime, time, timezone
+
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
 from .const import DOMAIN
+
 
 class TurmericSensor(CoordinatorEntity, Entity):
     """Representation of a Turmeric sensor."""
@@ -37,16 +40,21 @@ class TurmericSensor(CoordinatorEntity, Entity):
                     else f"{len(items)} items available"
                 )
             elif self.type == "meals":
-                today = datetime.combine(datetime.today(), time.min)
+                today = datetime.now(timezone.utc).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 meals = [
                     meal
                     for meal in self.coordinator.data["meals"]["result"]
-                    if datetime.strptime(
-                        meal["date"], "%Y-%m-%d %H:%M:%S"
-                    )
+                    if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
+                    .replace(tzinfo=timezone.utc)
                     >= today
                 ][:7]
-                return f"{len(meals)} upcoming meals" if meals else "No upcoming meals"
+                return (
+                    f"{len(meals)} upcoming meals"
+                    if meals
+                    else "No upcoming meals"
+                )
         except (KeyError, TypeError):
             return "Data unavailable"
 
@@ -55,28 +63,43 @@ class TurmericSensor(CoordinatorEntity, Entity):
         """Return additional state attributes."""
         try:
             if self.type == "groceries":
-                aisles = {}
+                aisles: dict[str, list[str]] = {}
                 for item in self.coordinator.data["groceries"]["result"]:
                     aisle = item.get("aisle", "Uncategorized")
                     aisles.setdefault(aisle, []).append(item["name"])
                 return {"aisles": aisles}
             elif self.type == "meals":
-                today = datetime.combine(datetime.today(), time.min)
+                today = datetime.now(timezone.utc).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                type_names = {
+                    0: "Breakfast",
+                    1: "Lunch",
+                    2: "Dinner",
+                    3: "Snack",
+                }
                 return {
                     "meals": [
-                        {"name": meal["name"], "date": meal["date"]}
+                        {
+                            "name": meal["name"],
+                            "date": meal["date"],
+                            "type": type_names.get(
+                                meal.get("type", 2), "Meal"
+                            ),
+                        }
                         for meal in sorted(
                             self.coordinator.data["meals"]["result"],
-                            key=lambda x: x["date"],
+                            key=lambda x: (x["date"], x.get("type", 0)),
+                            reverse=True,
                         )
-                        if datetime.strptime(
-                            meal["date"], "%Y-%m-%d %H:%M:%S"
-                        )
+                        if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
+                        .replace(tzinfo=timezone.utc)
                         >= today
                     ][:7]
                 }
         except (KeyError, TypeError):
             return {"error": "Data unavailable"}
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up Turmeric sensors based on a config entry."""
