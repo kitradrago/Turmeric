@@ -1,13 +1,37 @@
-# config_flow.py
+"""Config flow for Turmeric integration."""
 import logging
-import voluptuous as vol
+
 import aiohttp
+import voluptuous as vol
+
 from homeassistant import config_entries
+from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import selector
-from .const import DOMAIN, CONF_API_TOKEN, BASE_URL
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+from .const import DOMAIN, LOGIN_URL_V2, LOGIN_URL_V1
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_login_paprika(
+    session: aiohttp.ClientSession, email: str, password: str
+) -> str | None:
+    """Authenticate with Paprika and return the bearer token, or None on failure."""
+    for url in (LOGIN_URL_V2, LOGIN_URL_V1):
+        try:
+            async with session.post(
+                url, data={"email": email, "password": password}, timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    token = data.get("result", {}).get("token")
+                    if token:
+                        return token
+        except (aiohttp.ClientError, TimeoutError):
+            continue
+    return None
+
 
 class TurmericConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for the Turmeric integration."""
@@ -15,41 +39,49 @@ class TurmericConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None) -> FlowResult:
-        """Handle the initial step."""
-        errors = {}
+        """Handle the initial step — email + password login."""
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-            api_token = user_input.get(CONF_API_TOKEN)
+            email = user_input[CONF_EMAIL]
+            password = user_input[CONF_PASSWORD]
             groceries_refresh = user_input.get("groceries_refresh", 360)
             meals_refresh = user_input.get("meals_refresh", 720)
 
-            if not await self.async_validate_api_token(api_token):
-                errors[CONF_API_TOKEN] = "invalid_api_token"
-            elif not (1 <= groceries_refresh <= 1440):
-                errors["groceries_refresh"] = "invalid_refresh_time"
-            elif not (1 <= meals_refresh <= 1440):
-                errors["meals_refresh"] = "invalid_refresh_time"
+            if not (1 <= groceries_refresh <= 1440) or not (1 <= meals_refresh <= 1440):
+                errors["base"] = "invalid_refresh_time"
             else:
-                return self.async_create_entry(
-                    title="Turmeric",
-                    data={
-                        CONF_API_TOKEN: api_token,
-                        "groceries_refresh": groceries_refresh,
-                        "meals_refresh": meals_refresh,
-                    },
-                )
+                # Prevent duplicate entries for the same account
+                await self.async_set_unique_id(email.lower())
+                self._abort_if_unique_id_configured()
+
+                session = async_get_clientsession(self.hass)
+                token = await async_login_paprika(session, email, password)
+
+                if token is None:
+                    errors["base"] = "invalid_auth"
+                else:
+                    return self.async_create_entry(
+                        title=email,
+                        data={
+                            CONF_EMAIL: email,
+                            CONF_PASSWORD: password,
+                            "api_token": token,
+                            "groceries_refresh": groceries_refresh,
+                            "meals_refresh": meals_refresh,
+                        },
+                    )
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_API_TOKEN): selector.TextSelector(
-                    selector.TextSelectorConfig(type="password")
+                vol.Required(CONF_EMAIL): str,
+                vol.Required(CONF_PASSWORD): str,
+                vol.Optional("groceries_refresh", default=360): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=1440)
                 ),
-                vol.Optional(
-                    "groceries_refresh", default=360
-                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
-                vol.Optional(
-                    "meals_refresh", default=720
-                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440)),
+                vol.Optional("meals_refresh", default=720): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=1440)
+                ),
             }
         )
 
@@ -57,19 +89,8 @@ class TurmericConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user", data_schema=data_schema, errors=errors
         )
 
-    async def async_validate_api_token(self, api_token: str) -> bool:
-        """Validate the API token against the Turmeric API."""
-        try:
-            headers = {"Authorization": f"Bearer {api_token}"}
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{BASE_URL}/groceries", headers=headers) as resp:
-                    _LOGGER.debug("Validation response status: %s", resp.status)
-                    if resp.status == 200:
-                        return True
-                    _LOGGER.debug(
-                        "Validation response text: %s", await resp.text()
-                    )
-                    return False
-        except Exception as err:  # pragma: no cover
-            _LOGGER.error("Error validating API token: %s", err)
-            return False
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Return the options flow handler."""
+        from .options_flow import TurmericOptionsFlowHandler
+        return TurmericOptionsFlowHandler(config_entry)

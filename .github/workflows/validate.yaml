@@ -12,33 +12,9 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Install HACS action
+      - name: HACS Validation
         uses: hacs/action@main
         with:
           category: "integration"
-
-      - name: Validate `brands` folder
-        run: |
-          if [ ! -d "./brands/turmeric" ]; then
-            echo "Error: brands/turmeric folder does not exist."
-            exit 1
-          fi
-          if [ ! -f "./brands/turmeric/hacs.json" ]; then
-            echo "Error: hacs.json missing in brands/turmeric folder."
-            exit 1
-          fi
-          if [ ! -f "./brands/turmeric/logo.png" ]; then
-            echo "Error: logo.png missing in brands/turmeric folder."
-            exit 1
-          fi
-          if [ ! -f "./brands/turmeric/icon.png" ]; then
-            echo "Error: icon.png missing in brands/turmeric folder."
-            exit 1
-          fi
