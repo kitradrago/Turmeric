@@ -89,7 +89,8 @@ class TurmericSensor(CoordinatorEntity, Entity):
                         }
                         for meal in sorted(
                             self.coordinator.data["meals"]["result"],
-                            key=lambda x: x["date"],
+                            key=lambda x: (x["date"], x.get("type", 0)),
+                            reverse=True,
                         )
                         if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
                         .replace(tzinfo=timezone.utc)
