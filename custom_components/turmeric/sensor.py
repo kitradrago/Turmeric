@@ -1,8 +1,13 @@
-# sensor.py
-from datetime import datetime, time
+"""Sensor platform for Turmeric integration."""
+from datetime import datetime, timezone
+
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import DOMAIN
+
+from .const import DOMAIN, MEAL_TYPES
+
+_LOGGER = __import__("logging").getLogger(__name__)
+
 
 class TurmericSensor(CoordinatorEntity, Entity):
     """Representation of a Turmeric sensor."""
@@ -30,6 +35,7 @@ class TurmericSensor(CoordinatorEntity, Entity):
                 items = [
                     item["name"]
                     for item in self.coordinator.data["groceries"]["result"]
+                    if isinstance(item, dict) and "name" in item
                 ]
                 return (
                     ", ".join(items)
@@ -37,17 +43,24 @@ class TurmericSensor(CoordinatorEntity, Entity):
                     else f"{len(items)} items available"
                 )
             elif self.type == "meals":
-                today = datetime.combine(datetime.today(), time.min)
+                today = datetime.now(timezone.utc).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 meals = [
                     meal
                     for meal in self.coordinator.data["meals"]["result"]
-                    if datetime.strptime(
-                        meal["date"], "%Y-%m-%d %H:%M:%S"
-                    )
+                    if isinstance(meal, dict) and "date" in meal
+                    and datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
+                    .replace(tzinfo=timezone.utc)
                     >= today
                 ][:7]
-                return f"{len(meals)} upcoming meals" if meals else "No upcoming meals"
-        except (KeyError, TypeError):
+                return (
+                    f"{len(meals)} upcoming meals"
+                    if meals
+                    else "No upcoming meals"
+                )
+        except (KeyError, TypeError, ValueError) as err:
+            _LOGGER.warning("Error computing state for %s: %s", self.type, err)
             return "Data unavailable"
 
     @property
@@ -55,28 +68,51 @@ class TurmericSensor(CoordinatorEntity, Entity):
         """Return additional state attributes."""
         try:
             if self.type == "groceries":
-                aisles = {}
+                aisles: dict[str, list[str]] = {}
                 for item in self.coordinator.data["groceries"]["result"]:
+                    if not isinstance(item, dict) or "name" not in item:
+                        continue
                     aisle = item.get("aisle", "Uncategorized")
                     aisles.setdefault(aisle, []).append(item["name"])
                 return {"aisles": aisles}
+
             elif self.type == "meals":
-                today = datetime.combine(datetime.today(), time.min)
-                return {
-                    "meals": [
-                        {"name": meal["name"], "date": meal["date"]}
-                        for meal in sorted(
-                            self.coordinator.data["meals"]["result"],
-                            key=lambda x: x["date"],
+                today = datetime.now(timezone.utc).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                meals_list = []
+
+                for meal in sorted(
+                    self.coordinator.data["meals"]["result"],
+                    key=lambda x: (x.get("date", ""), x.get("type", 0)),
+                    reverse=True,
+                ):
+                    if not isinstance(meal, dict) or "name" not in meal or "date" not in meal:
+                        continue
+
+                    try:
+                        meal_date = datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
+                        meal_date_utc = meal_date.replace(tzinfo=timezone.utc)
+                    except ValueError:
+                        _LOGGER.warning("Invalid meal date format: %s", meal.get("date"))
+                        continue
+
+                    if meal_date_utc >= today:
+                        meal_type = meal.get("type", 2)
+                        meals_list.append(
+                            {
+                                "name": meal["name"],
+                                "date": meal["date"],
+                                "type": MEAL_TYPES.get(meal_type, "Meal"),
+                            }
                         )
-                        if datetime.strptime(
-                            meal["date"], "%Y-%m-%d %H:%M:%S"
-                        )
-                        >= today
-                    ][:7]
-                }
-        except (KeyError, TypeError):
+
+                return {"meals": meals_list[:7]}
+
+        except (KeyError, TypeError, ValueError) as err:
+            _LOGGER.warning("Error computing attributes for %s: %s", self.type, err)
             return {"error": "Data unavailable"}
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up Turmeric sensors based on a config entry."""

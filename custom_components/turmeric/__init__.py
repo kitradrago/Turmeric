@@ -1,21 +1,19 @@
-# __init__.py
+"""The Turmeric integration."""
 import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.const import CONF_API_TOKEN
-from .coordinator import TurmericCoordinator
+
 from .const import DOMAIN, DEFAULT_GROCERIES_REFRESH, DEFAULT_MEALS_REFRESH
+from .coordinator import TurmericCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+PLATFORMS = ["sensor"]
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Turmeric from a config entry."""
-
-    # ------------------------------------------------------------------
-    # 1️⃣  Pull values – first from options (user‑editable), then fall back
-    #     to the original data dict or defaults.
-    # ------------------------------------------------------------------
-    api_token = entry.data.get(CONF_API_TOKEN) or entry.options.get(CONF_API_TOKEN)
     groceries_refresh = entry.options.get(
         "groceries_refresh",
         entry.data.get("groceries_refresh", DEFAULT_GROCERIES_REFRESH),
@@ -26,31 +24,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     coordinator = TurmericCoordinator(
-        hass, api_token, groceries_refresh, meals_refresh
+        hass, dict(entry.data), groceries_refresh, meals_refresh
     )
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # Perform the very first refresh (so entities have data right away)
+    # Initial data fetch so entities have data right away
     await coordinator.async_config_entry_first_refresh()
 
     # Forward the entry to the sensor platform
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
-    )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # ------------------------------------------------------------------
-    # 2️⃣  Register a manual‑refresh service for debugging / automation
-    # ------------------------------------------------------------------
+    # Register a manual-refresh service for automations / debugging
     async def _handle_refresh(call):
-        """Service handler – force an immediate refresh of both datasets."""
+        """Force an immediate refresh of both datasets."""
+        _LOGGER.debug("Manual refresh requested via turmeric.refresh_all service")
         await coordinator.async_refresh()
 
     hass.services.async_register(DOMAIN, "refresh_all", _handle_refresh)
+    _LOGGER.debug("Registered turmeric.refresh_all service")
 
-    # ------------------------------------------------------------------
-    # 3️⃣  Listen for option changes so a reload happens automatically
-    # ------------------------------------------------------------------
+    # Reload automatically when options change
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
     return True
@@ -64,7 +58,8 @@ async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload the Turmeric config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
+        _LOGGER.debug("Turmeric integration unloaded")
     return unload_ok

@@ -1,0 +1,4 @@
+refresh_all:
+  name: Refresh All Turmeric Data
+  description: Force an immediate sync of all Turmeric data (groceries and meals) from the Paprika API. Useful for automations or manual updates.
+  fields: {}
