@@ -1,4 +1,4 @@
-##Note: This is a pet project and may not be updated for long periods of time. Please feel free to contribute your fixes!
+## Note: This is a pet project and may not be updated for long periods of time. Please feel free to contribute your fixes!
 
 # Turmeric – Home Assistant integration for Paprika App
 
