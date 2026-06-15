@@ -1,3 +1,5 @@
+##Note: This is a pet project and may not be updated for long periods of time. Please feel free to contribute your fixes!
+
 # Turmeric – Home Assistant integration for Paprika App
 
 Turmeric is a custom Home Assistant integration that connects to the [Paprika Recipe Manager](https://www.paprikaapp.com/) API and exposes two sensors:
