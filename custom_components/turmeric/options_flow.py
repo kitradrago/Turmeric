@@ -1,14 +1,20 @@
 """Options flow for Turmeric integration."""
+<<<<<<< HEAD
 import logging
 
+=======
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 import voluptuous as vol
 
 from homeassistant import config_entries
 
 from .const import DEFAULT_GROCERIES_REFRESH, DEFAULT_MEALS_REFRESH
 
+<<<<<<< HEAD
 _LOGGER = logging.getLogger(__name__)
 
+=======
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
 class TurmericOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Turmeric options."""
@@ -46,4 +52,8 @@ class TurmericOptionsFlowHandler(config_entries.OptionsFlow):
             }
         )
 
+<<<<<<< HEAD
         return self.async_show_form(step_id="init", data_schema=options_schema)
+=======
+        return self.async_show_form(step_id="init", data_schema=options_schema)
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35

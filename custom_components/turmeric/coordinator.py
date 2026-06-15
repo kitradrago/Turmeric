@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
+<<<<<<< HEAD
 from .const import (
     BASE_URL,
     DEFAULT_GROCERIES_REFRESH,
@@ -20,6 +21,9 @@ from .const import (
     GROCERY_REQUIRED_FIELDS,
     MEAL_REQUIRED_FIELDS,
 )
+=======
+from .const import BASE_URL, DEFAULT_GROCERIES_REFRESH, DEFAULT_MEALS_REFRESH
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,17 +65,24 @@ class TurmericCoordinator(DataUpdateCoordinator):
         email = self._entry_data.get(CONF_EMAIL, "")
         password = self._entry_data.get(CONF_PASSWORD, "")
         if not email or not password:
+<<<<<<< HEAD
             _LOGGER.error("Missing email or password for re-authentication")
+=======
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
             return False
 
         session = async_get_clientsession(self.hass)
         token = await async_login_paprika(session, email, password)
         if token:
             self.api_token = token
+<<<<<<< HEAD
             _LOGGER.debug("Successfully re-authenticated with Paprika API")
             return True
 
         _LOGGER.error("Re-authentication failed: Invalid token returned from Paprika API")
+=======
+            return True
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
         return False
 
     async def _async_update_data(self):
@@ -92,6 +103,7 @@ class TurmericCoordinator(DataUpdateCoordinator):
 
         return {"groceries": self.groceries_data, "meals": self.meals_data}
 
+<<<<<<< HEAD
     async def _validate_response(self, data: dict, endpoint: str) -> bool:
         """Validate API response structure matches expectations."""
         if not isinstance(data, dict):
@@ -210,15 +222,52 @@ class TurmericCoordinator(DataUpdateCoordinator):
                 raise UpdateFailed(f"Client error while fetching {endpoint}: {err}")
 
         raise UpdateFailed(f"Failed to fetch {endpoint} after {max_retries} attempts")
+=======
+    async def _api_get(self, endpoint: str) -> dict:
+        """Make an authenticated GET request, re-authenticating on 401."""
+        session = async_get_clientsession(self.hass)
+        headers = {"Authorization": f"Bearer {self.api_token}"}
+
+        async with asyncio.timeout(10):
+            async with session.get(
+                f"{BASE_URL}/{endpoint}", headers=headers
+            ) as resp:
+                if resp.status == 401:
+                    _LOGGER.debug("Token expired for %s, re-authenticating", endpoint)
+                    if await self._async_re_authenticate():
+                        headers["Authorization"] = f"Bearer {self.api_token}"
+                        async with session.get(
+                            f"{BASE_URL}/{endpoint}", headers=headers
+                        ) as retry_resp:
+                            retry_resp.raise_for_status()
+                            return await retry_resp.json()
+                    raise UpdateFailed(f"Re-authentication failed for {endpoint}")
+
+                if resp.status == 429:
+                    retry = resp.headers.get("Retry-After", "unknown")
+                    _LOGGER.warning(
+                        "Paprika rate-limited %s request – retry after %s seconds",
+                        endpoint,
+                        retry,
+                    )
+                    raise UpdateFailed(f"Rate limited ({endpoint})")
+
+                resp.raise_for_status()
+                return await resp.json()
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
     async def _fetch_groceries(self):
         """Fetch groceries data from the Paprika API."""
         try:
             self.groceries_data = await self._api_get("groceries")
+<<<<<<< HEAD
             _LOGGER.debug(
                 "Successfully fetched groceries: %d items",
                 len(self.groceries_data.get("result", [])),
             )
+=======
+            _LOGGER.debug("Fetched groceries data: %s", self.groceries_data)
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
         except Exception as err:
             _LOGGER.error("Error fetching groceries data: %s", err)
             raise UpdateFailed(f"Failed to update groceries: {err}") from err
@@ -227,6 +276,7 @@ class TurmericCoordinator(DataUpdateCoordinator):
         """Fetch meals data from the Paprika API."""
         try:
             self.meals_data = await self._api_get("meals")
+<<<<<<< HEAD
             _LOGGER.debug(
                 "Successfully fetched meals: %d items",
                 len(self.meals_data.get("result", [])),
@@ -234,3 +284,9 @@ class TurmericCoordinator(DataUpdateCoordinator):
         except Exception as err:
             _LOGGER.error("Error fetching meals data: %s", err)
             raise UpdateFailed(f"Failed to update meals: {err}") from err
+=======
+            _LOGGER.debug("Fetched meals data: %s", self.meals_data)
+        except Exception as err:
+            _LOGGER.error("Error fetching meals data: %s", err)
+            raise UpdateFailed(f"Failed to update meals: {err}") from err
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35

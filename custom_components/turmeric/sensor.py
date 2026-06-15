@@ -1,12 +1,21 @@
 """Sensor platform for Turmeric integration."""
+<<<<<<< HEAD
 from datetime import datetime, timezone
+=======
+from datetime import datetime, time, timezone
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+<<<<<<< HEAD
 from .const import DOMAIN, MEAL_TYPES
 
 _LOGGER = __import__("logging").getLogger(__name__)
+
+=======
+from .const import DOMAIN
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
 
 class TurmericSensor(CoordinatorEntity, Entity):
@@ -49,8 +58,12 @@ class TurmericSensor(CoordinatorEntity, Entity):
                 meals = [
                     meal
                     for meal in self.coordinator.data["meals"]["result"]
+<<<<<<< HEAD
                     if isinstance(meal, dict) and "date" in meal
                     and datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
+=======
+                    if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
                     .replace(tzinfo=timezone.utc)
                     >= today
                 ][:7]
@@ -59,8 +72,12 @@ class TurmericSensor(CoordinatorEntity, Entity):
                     if meals
                     else "No upcoming meals"
                 )
+<<<<<<< HEAD
         except (KeyError, TypeError, ValueError) as err:
             _LOGGER.warning("Error computing state for %s: %s", self.type, err)
+=======
+        except (KeyError, TypeError):
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
             return "Data unavailable"
 
     @property
@@ -80,6 +97,7 @@ class TurmericSensor(CoordinatorEntity, Entity):
                 today = datetime.now(timezone.utc).replace(
                     hour=0, minute=0, second=0, microsecond=0
                 )
+<<<<<<< HEAD
                 meals_list = []
 
                 for meal in sorted(
@@ -111,6 +129,34 @@ class TurmericSensor(CoordinatorEntity, Entity):
 
         except (KeyError, TypeError, ValueError) as err:
             _LOGGER.warning("Error computing attributes for %s: %s", self.type, err)
+=======
+                type_names = {
+                    0: "Breakfast",
+                    1: "Lunch",
+                    2: "Dinner",
+                    3: "Snack",
+                }
+                return {
+                    "meals": [
+                        {
+                            "name": meal["name"],
+                            "date": meal["date"],
+                            "type": type_names.get(
+                                meal.get("type", 2), "Meal"
+                            ),
+                        }
+                        for meal in sorted(
+                            self.coordinator.data["meals"]["result"],
+                            key=lambda x: (x["date"], x.get("type", 0)),
+                            reverse=True,
+                        )
+                        if datetime.strptime(meal["date"], "%Y-%m-%d %H:%M:%S")
+                        .replace(tzinfo=timezone.utc)
+                        >= today
+                    ][:7]
+                }
+        except (KeyError, TypeError):
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
             return {"error": "Data unavailable"}
 
 

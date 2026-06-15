@@ -1,16 +1,25 @@
 {
   "domain": "turmeric",
   "name": "Turmeric",
+<<<<<<< HEAD
   "version": "1.3.0",
+=======
+  "version": "1.2.0",
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
   "documentation": "https://github.com/kitradrago/Turmeric",
   "issue_tracker": "https://github.com/kitradrago/Turmeric/issues",
   "dependencies": [],
   "requirements": [],
   "codeowners": ["@kitradrago"],
   "config_flow": true,
+<<<<<<< HEAD
   "iot_class": "cloud_polling",
   "homeassistant": {
     "min_version": "2024.1.0"
   },
   "integration_type": "service"
 }
+=======
+  "iot_class": "cloud_polling"
+}
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35

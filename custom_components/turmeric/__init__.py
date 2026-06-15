@@ -9,8 +9,11 @@ from .coordinator import TurmericCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+<<<<<<< HEAD
 PLATFORMS = ["sensor"]
 
+=======
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Turmeric from a config entry."""
@@ -33,12 +36,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
 
     # Forward the entry to the sensor platform
+<<<<<<< HEAD
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+=======
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
     # Register a manual-refresh service for automations / debugging
     async def _handle_refresh(call):
         """Force an immediate refresh of both datasets."""
+<<<<<<< HEAD
         _LOGGER.debug("Manual refresh requested via turmeric.refresh_all service")
+=======
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
         await coordinator.async_refresh()
 
     hass.services.async_register(DOMAIN, "refresh_all", _handle_refresh)
@@ -61,5 +71,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
+<<<<<<< HEAD
         _LOGGER.debug("Turmeric integration unloaded")
     return unload_ok
+=======
+    return unload_ok
+>>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
