@@ -44,7 +44,6 @@ The integration will automatically authenticate with the Paprika API and begin s
 
 Open **Developer Tools → States** and look for `sensor.turmeric_groceries` and `sensor.turmeric_meals`. Their state should contain data (or "Data unavailable" if something went wrong).
 
-<<<<<<< HEAD
 ## API Version & Compatibility
 
 This integration uses the **Paprika Recipe Manager API v2** (`/api/v2/sync`).
@@ -90,8 +89,6 @@ The integration securely stores your email and password and uses them to obtain 
 
 Meal type codes: `0` = Breakfast, `1` = Lunch, `2` = Dinner, `3` = Snack
 
-=======
->>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 ## Dashboard cards (examples)
 
 ### Grocery List (Markdown card)
@@ -161,7 +158,6 @@ Call `turmeric.refresh_all` from **Developer Tools → Services** or from any au
 service: turmeric.refresh_all
 ```
 
-<<<<<<< HEAD
 Example automation:
 
 ```yaml
@@ -176,10 +172,6 @@ automation:
 
 ## Debug logging
 
-=======
-## Debug logging
-
->>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 Add the following to your `configuration.yaml` to see detailed request/response logs:
 
 ```yaml
@@ -197,16 +189,11 @@ Check the logs under **Settings → System → Logs**.
 | --- | --- | --- |
 | Integration not listed | Files not in `/config/custom_components/turmeric/` or HA not restarted | Verify folder location, restart HA, clear browser cache |
 | Sensors show "Data unavailable" | Invalid credentials or network error | Check email/password, enable debug logging |
-<<<<<<< HEAD
 | Invalid credentials error during setup | Incorrect email/password or Paprika account issue | Verify credentials with [Paprika web app](https://www.paprikaapp.com/account/), ensure sync is enabled |
 | No periodic updates | Refresh intervals too long or options not saved | Check **Configure** page, verify `turmeric.refresh_all` service exists in Developer Tools |
 | Rate-limit warnings (429) | Too many API calls to Paprika | Increase refresh intervals (minimum recommended: 60 min for groceries, 120 min for meals) |
 | Token re-authentication failures | Stored credentials are invalid or Paprika API changed | Re-add the integration with current credentials |
 | `refresh_all` service not appearing | services.yaml missing or HA cache needs clearing | Restart Home Assistant, clear browser cache, check Services in Developer Tools |
-=======
-| No periodic updates | Refresh intervals too long or options not saved | Check **Configure** page, verify `turmeric.refresh_all` service exists |
-| Rate-limit warnings (429) | Too many API calls to Paprika | Increase refresh intervals |
->>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
 
 ## Contributing
 
@@ -214,8 +201,4 @@ Pull requests, issues, and ideas are welcome! Please open them on the [GitHub re
 
 ## License
 
-<<<<<<< HEAD
 This project is released under the [MIT License](LICENSE).
-=======
-This project is released under the [MIT License](LICENSE).
->>>>>>> d606a24d74e32d92a3c366ffe03c4c1908295b35
